@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chaos Engineering Simulator</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <nav class="nav container">
+        <div class="logo">Chaos Engineering Simulator</div>
+        <a class="cta" href="#run">Run Demo</a>
+      </nav>
+      <div class="hero-content container">
+        <p class="eyebrow">Cloud Portfolio Project</p>
+        <h1>Stress microservices. Prove resilience. Quantify reliability gains.</h1>
+        <p class="subtext">
+          A pure Python simulator that injects failure and latency, then compares
+          end-to-end outcomes with and without retries, circuit breakers, and
+          fallback responses.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#compare">See Results</a>
+          <a class="btn btn-ghost" href="#patterns">Explore Patterns</a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="section container" id="architecture">
+        <h2>Service Chain Architecture</h2>
+        <p class="section-intro">
+          A request only succeeds if all services complete in sequence:
+        </p>
+        <div class="chain">
+          <div class="service-card">auth-svc</div>
+          <span class="arrow">→</span>
+          <div class="service-card">payment-svc</div>
+          <span class="arrow">→</span>
+          <div class="service-card">inventory-svc</div>
+        </div>
+      </section>
+
+      <section class="section container" id="patterns">
+        <h2>Resilience Patterns in Action</h2>
+        <div class="grid patterns">
+          <article class="card">
+            <h3>Chaos Monkey</h3>
+            <p>
+              Injects random failures and latency spikes to emulate unstable
+              production dependencies.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Retries</h3>
+            <p>
+              Re-attempts transient failures before giving up, improving success
+              in noisy network conditions.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Circuit Breaker</h3>
+            <p>
+              Uses CLOSED → OPEN → HALF_OPEN states to fail fast, recover
+              safely, and avoid cascading outages.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Fallback Response</h3>
+            <p>
+              Returns degraded-but-usable responses when retries are exhausted
+              or the breaker is open.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section container" id="compare">
+        <h2>Comparison Snapshot</h2>
+        <p class="section-intro">
+          Same seed, same chaos settings, dramatically different outcomes.
+        </p>
+        <div class="grid stats">
+          <article class="metric">
+            <span class="label">Without resilience</span>
+            <strong>35.5%</strong>
+            <span class="hint">end-to-end success rate</span>
+          </article>
+          <article class="metric highlight">
+            <span class="label">With resilience</span>
+            <strong>100.0%</strong>
+            <span class="hint">end-to-end success rate</span>
+          </article>
+          <article class="metric">
+            <span class="label">Improvement</span>
+            <strong>+64.5 pts</strong>
+            <span class="hint">success rate delta</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="section container" id="run">
+        <h2>Run It Locally</h2>
+        <p class="section-intro">
+          Zero dependencies. Pure Python 3 standard library.
+        </p>
+        <div class="code-wrap">
+          <code>python chaos_sim.py --compare --requests 200 --failure-rate 0.3</code>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <p>
+          Inspired by chaos engineering practices from Netflix Chaos Monkey and
+          AWS Fault Injection Simulator.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
