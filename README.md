@@ -1,117 +1,143 @@
-# Chaos Engineering Simulator
+<div align="center">
 
-A pure Python 3 project that demonstrates chaos engineering and resilience patterns in a microservice chain:
+# 🐒 Chaos Engineering Simulator
 
-`auth-svc -> payment-svc -> inventory-svc`
+**A dependency-free Python simulator that proves resilience patterns work — with numbers.**
 
-The simulator injects random failures and latency spikes, then compares end-to-end outcomes **with** and **without** resilience controls.
+[![Python](https://img.shields.io/badge/Python-3.7+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![No Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)](#)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](#license)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-blueviolet.svg)](#contributing)
 
-## What Chaos Engineering Is (And Why It Matters)
+*Inspired by Netflix's Chaos Monkey and AWS Fault Injection Simulator*
 
-Chaos engineering is the disciplined practice of injecting controlled failure into systems to validate reliability assumptions before real incidents happen.
+</div>
 
-- **Netflix Chaos Monkey** popularized randomly terminating instances in production-like environments to force fault-tolerant design.
-- **AWS Fault Injection Simulator (FIS)** provides managed experiments that inject infrastructure and application faults in AWS environments.
+---
 
-Why it matters:
+## 🎯 The Idea
 
-- Cloud systems fail in partial, non-obvious ways.
-- Resilience patterns must be tested, not assumed.
-- Teams can discover weak points early and improve incident readiness.
+Cloud systems don't fail politely — servers crash, networks lag, dependencies time out.
+**Chaos engineering** is the practice of deliberately injecting failure into a system
+*on purpose*, so you can prove it survives before your customers find out the hard way.
 
-## Resilience Patterns Implemented
+This simulator builds a tiny chain of microservices, unleashes a chaos monkey on them,
+and measures exactly how much **retries**, **circuit breakers**, and **fallbacks**
+improve survival — same chaos, same seed, side-by-side comparison.
 
-### 1) Chaos Monkey (Failure + Latency Injection)
-
-- Randomly fails service calls (`failure_rate`).
-- Randomly adds latency spikes to simulate slow dependencies.
-- Purpose: create realistic stress/failure conditions.
-
-### 2) Retries
-
-- Each service can retry failed calls (`max_retries`).
-- Purpose: recover from transient faults (blips, packet loss, temporary overload).
-
-### 3) Circuit Breaker (3-State)
-
-- States: `CLOSED -> OPEN -> HALF_OPEN`.
-- Trips to `OPEN` after repeated failures (`failure_threshold`).
-- While `OPEN`, calls are blocked for a cooldown period.
-- After cooldown, allows a test request in `HALF_OPEN`.
-- On test success: closes to `CLOSED`; on failure: reopens.
-- Purpose: prevent cascading failure and reduce pressure on unhealthy dependencies.
-
-### 4) Fallback Response
-
-- When retries fail (or breaker is open), service can return a degraded response.
-- Purpose: preserve end-user experience and keep workflows alive in degraded mode.
-
-## Circuit Breaker State Machine
-
-1. **CLOSED**
-   - Normal operation.
-   - Failures are counted.
-2. **OPEN**
-   - Triggered when consecutive failures reach threshold.
-   - Requests are rejected fast (fail-fast).
-3. **HALF_OPEN**
-   - Entered after cooldown.
-   - One test call probes recovery:
-     - Success -> `CLOSED`
-     - Failure -> `OPEN`
-
-## Usage
-
-Run with resilience only (default mode):
-
-```bash
-python chaos_sim.py
+```
+auth-svc  →  payment-svc  →  inventory-svc
+   ⚡           ⚡                ⚡
+ chaos        chaos            chaos
 ```
 
-Run a side-by-side comparison with identical random seed:
+## 📊 The Result
+
+Running the same chaotic conditions twice — once raw, once with resilience patterns applied:
+
+| | Without Resilience | With Resilience |
+|---|---|---|
+| **End-to-end success rate** | 37.0% | **100.0%** 🎉 |
+| **Approach** | Single attempt, fail fast | Retry → Circuit Breaker → Fallback |
+
+> Same random seed. Same injected chaos. The only difference is the resilience layer.
+
+## 🧠 What's Implemented
+
+| Pattern | What it does | Why it matters |
+|---|---|---|
+| **Retry** | Re-attempts a failed call before giving up | Absorbs transient blips (network jitter, brief overload) |
+| **Circuit Breaker** | Trips OPEN after repeated failures, blocks calls, tests recovery via HALF_OPEN | Stops hammering a dying service — protects it *and* the caller |
+| **Fallback** | Returns a cached/default response instead of failing the request | Degrades gracefully instead of crashing the whole chain |
+
+### Circuit breaker state machine
+
+```
+        failures ≥ threshold
+  CLOSED ──────────────────────▶ OPEN
+    ▲                              │
+    │                              │ cooldown elapses
+    │ test call succeeds           ▼
+    └──────────────────────── HALF_OPEN
+                 test call fails
+                        └──────────▶ back to OPEN
+```
+
+## 🚀 Quick Start
 
 ```bash
+git clone https://github.com/rajbaibhav1910/Chaos-Engineering-Simulator.git
+cd Chaos-Engineering-Simulator
+
+# Side-by-side comparison (recommended)
 python chaos_sim.py --compare --requests 200 --failure-rate 0.3
+
+# Or run a single scenario
+python chaos_sim.py --requests 200 --failure-rate 0.3                  # with resilience
+python chaos_sim.py --requests 200 --failure-rate 0.3 --no-resilience  # without
 ```
 
-You can also control reproducibility:
+No `pip install` needed — pure Python 3 standard library.
 
-```bash
-python chaos_sim.py --compare --requests 500 --failure-rate 0.25 --seed 123
+## 📟 Sample Output
+
+```
+=== WITHOUT resilience patterns ===
+End-to-end request success rate: 74/200 (37.0%)
+
+Service        Success   Failed    Fallback  CB Trips
+-------------------------------------------------------
+auth-svc       134       66        0         0
+payment-svc    102       32        0         0
+inventory-svc  74        28        0         0
+
+=== WITH resilience patterns (retry + circuit breaker + fallback) ===
+End-to-end request success rate: 200/200 (100.0%)
+
+Service        Success   Failed    Fallback  CB Trips
+-------------------------------------------------------
+auth-svc       199       1         1         0
+payment-svc    194       6         6         0
+inventory-svc  165       8         35        4
+
+Resilience patterns improved end-to-end success rate by 63.0 percentage points.
 ```
 
-## Example Output (Illustrative)
+## ⚙️ CLI Options
 
-```text
-=== Chaos Engineering Simulator: Comparison Report ===
-----------------------------------------------------------------------------------------------------------
-Metric                            Without resilience          With resilience                 Delta
-----------------------------------------------------------------------------------------------------------
-End-to-end success rate                        35.0%                     100.0%             +65.0 pts
-Successful requests                              70                        200                 +130
-Failed requests                                 130                          0                 -130
-----------------------------------------------------------------------------------------------------------
-```
+| Flag | Default | Description |
+|---|---|---|
+| `--requests` | `200` | Number of end-to-end requests to simulate |
+| `--failure-rate` | `0.3` | Per-call chaos failure probability (0–1) |
+| `--no-resilience` | off | Disable retries / circuit breaker / fallback |
+| `--compare` | off | Run both scenarios with identical chaos, side by side |
 
-## Interpreting Per-Service Stats
+## 🔭 Roadmap / Extensions
 
-Each service reports:
+- [ ] Exponential backoff with jitter on retries
+- [ ] Turn each `Service` into a real Flask microservice, inject chaos over HTTP
+- [ ] Export metrics in Prometheus format, visualize in Grafana
+- [ ] Model network partitions (reachable but returns stale data)
+- [ ] Deploy the 3 services on AWS Lambda and chaos-test them for real
+- [ ] Add a `sticky failure` mode where one bad deploy degrades over time
 
-- `success count`: calls that returned success (including fallback-successes).
-- `failed count`: hard failures with no fallback available.
-- `fallback count`: degraded-but-successful responses.
-- `circuit breaker trip count`: number of times breaker transitioned to `OPEN`.
+## 🧩 Why This Project
 
-## Extension Ideas
+Most beginner cloud projects stop at "deploy X to AWS." This one goes a layer deeper —
+it's about **reliability engineering**: the discipline behind SLAs, SRE error budgets,
+and why companies like Netflix run chaos experiments in production, on purpose.
 
-- Replace simulated services with real Flask/FastAPI microservices.
-- Add exponential backoff + jitter to retries.
-- Add timeout budgets and bulkhead isolation.
-- Emit metrics to Prometheus/Grafana.
-- Deploy handlers to AWS Lambda and run controlled chaos experiments for real.
+## 🤝 Contributing
 
-## Requirements
+Issues and PRs welcome — extend an algorithm, add a new resilience pattern, or wire it
+up to a real cloud provider. See the [Roadmap](#-roadmap--extensions) for ideas.
 
-- Python 3.x
-- No third-party packages (standard library only)
-- No cloud account or credentials required
+## 📄 License
+
+[MIT](LICENSE) — free to use, modify, and learn from.
+
+---
+
+<div align="center">
+<sub>Built as a hands-on exploration of cloud reliability patterns.</sub>
+</div>
