@@ -1,9 +1,18 @@
 FROM python:3.12-slim
 
+LABEL maintainer="Raj Baibhav"
+LABEL project="Chaos Engineering Simulator"
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
 WORKDIR /app
 
-COPY chaos_sim.py README.md ./
+COPY . .
 
-# Default run (can be overridden with docker run args)
-ENTRYPOINT ["python", "chaos_sim.py"]
-CMD ["--compare", "--requests", "200", "--failure-rate", "0.3"]
+EXPOSE 8000
+
+RUN useradd -m appuser
+USER appuser
+
+CMD ["python", "-m", "http.server", "8000"]
