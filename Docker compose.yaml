@@ -1,0 +1,12 @@
+version: "3.9"
+
+services:
+  chaos-simulator:
+    build: .
+    container_name: chaos-simulator
+    command:
+      - "--compare"
+      - "--requests"
+      - "1000"
+      - "--failure-rate"
+      - "0.5"
